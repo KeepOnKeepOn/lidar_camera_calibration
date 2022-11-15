@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node pkg="rs_to_velodyne" type="rs_to_velodyne" name="rs_to_velodyne" output="screen" args="XYZIRT XYZI"/>
+    <node 
+        pkg="lidar_camera_calibration"
+        type="calibrate_camera_lidar.py"
+        name="camera_lidar_calibrator"
+        output="screen"
+        args="--calibrate" />
+
+</launch>

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -93,7 +93,7 @@ Outputs: None
 '''
 def handle_keyboard():
     global KEY_LOCK, PAUSE
-    key = raw_input('Press [ENTER] to pause and pick points\n')
+    key = input('Press [ENTER] to pause and pick points\n')
     with KEY_LOCK: PAUSE = True
 
 
@@ -156,7 +156,7 @@ Inputs:
 Outputs:
     Picked points saved in PKG_PATH/CALIB_PATH/img_corners.npy
 '''
-def extract_points_2D(img_msg, now, rectify=False):
+def extract_points_2D(img_msg, now, rectify=True):
     # Log PID
     rospy.loginfo('2D Picker PID: [%d]' % os.getpid())
 
@@ -315,7 +315,7 @@ Outputs:
 def calibrate(points2D=None, points3D=None):
     # Load corresponding points
     folder = os.path.join(PKG_PATH, CALIB_PATH)
-    if points2D is None: points2D = np.load(os.path.join(folder, 'img_corners.npy'))
+    if points2D is None: points2D = np.load(os.path.join(folder, 'img_corners_rect.npy'))
     if points3D is None: points3D = np.load(os.path.join(folder, 'pcl_corners.npy'))
     
     # Check points shape
@@ -337,7 +337,7 @@ def calibrate(points2D=None, points3D=None):
         translation_vector, camera_matrix, dist_coeffs)[0].squeeze(1)
     assert(points2D_reproj.shape == points2D.shape)
     error = (points2D_reproj - points2D)[inliers]  # Compute error only over inliers.
-    rmse = np.sqrt(np.mean(error[:, 0] ** 2 + error[:, 1] ** 2))
+    rmse = np.sqrt(np.mean(error[:, 0][:, 0] ** 2 + error[:, 0][:, 1] ** 2))
     rospy.loginfo('Re-projection error before LM refinement (RMSE) in px: ' + str(rmse))
 
     # Refine estimate using LM
@@ -355,7 +355,7 @@ def calibrate(points2D=None, points3D=None):
             translation_vector, camera_matrix, dist_coeffs)[0].squeeze(1)
         assert(points2D_reproj.shape == points2D.shape)
         error = (points2D_reproj - points2D)[inliers]  # Compute error only over inliers.
-        rmse = np.sqrt(np.mean(error[:, 0] ** 2 + error[:, 1] ** 2))
+        rmse = np.sqrt(np.mean(error[:, 0][:, 0] ** 2 + error[:, 0][:, 1] ** 2))
         rospy.loginfo('Re-projection error after LM refinement (RMSE) in px: ' + str(rmse))
 
     # Convert rotation vector
@@ -531,9 +531,9 @@ if __name__ == '__main__':
 
     # Calibration mode, rosrun
     if sys.argv[1] == '--calibrate':
-        camera_info = '/sensors/camera/camera_info'
-        image_color = '/sensors/camera/image_color'
-        velodyne_points = '/sensors/velodyne_points'
+        camera_info = '/flir_adk/camera_info'
+        image_color = '/flir_adk/image_raw'
+        velodyne_points = '/velodyne_points'
         camera_lidar = None
         PROJECT_MODE = False
     # Projection mode, run from launch file
